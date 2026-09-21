@@ -1,0 +1,17 @@
+Product Catalog
+
+Widget (Standard)
+Price: $25 per unit. A general-purpose widget suitable for most assembly tasks.
+Available in packs of 10, 50, and 100. Bulk orders of 100 or more receive a 5% discount.
+
+Gadget (Pro)
+Price: $40 per unit. A higher-precision gadget designed for professional use.
+Includes a carrying case and a 2-year extended warranty option for an additional $8.
+
+Widget Accessory Kit
+Price: $12 per unit. Includes mounting brackets and replacement parts compatible
+with the Standard Widget. Not compatible with the Gadget Pro line.
+
+Enterprise Support Plan
+Price: $499 per year. Includes priority support, a dedicated account manager, and
+guaranteed 4-hour response times for critical issues.
