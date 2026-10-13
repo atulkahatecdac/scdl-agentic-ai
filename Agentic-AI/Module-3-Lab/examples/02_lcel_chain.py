@@ -18,7 +18,7 @@ parser = StrOutputParser()
 chain = prompt | model | parser
 
 if __name__ == "__main__":
-    for topic in ["LCEL", "vector databases", "prompt engineering"]:
+    for topic in ["LangChain Expression Language", "vector databases", "prompt engineering"]:
         answer = chain.invoke({"topic": topic})
         print(f"\nTopic: {topic}")
         print(f"Answer: {answer}")

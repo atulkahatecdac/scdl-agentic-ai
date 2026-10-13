@@ -4,3 +4,4 @@ __pycache__/
 .env
 chroma_db/
 user_memory.json
+node_modules/

@@ -1,0 +1,138 @@
+{
+  "name": "M1-WF3 High-Priority Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M1-WF3 High-Priority Alert\n**Setup**\n1. **Sheets Trigger**: create a *Google Sheets Trigger OAuth2* credential (same client ID/secret), pick the spreadsheet and the **Tickets** tab.\n2. **Alert Support Team**: pick your Gmail credential; change the To address (support-team@example.com).\n3. Activate — the trigger polls every minute.",
+        "width": 460,
+        "height": 250,
+        "color": 5
+      },
+      "id": "9df4c29e-ea54-4aeb-aad7-307c1de9267a",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "id": "90f79d43-f441-4ba1-aa2c-9a559083963b",
+      "name": "Sheets Trigger",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "89a579a0-790d-4b48-9b29-98d71ecfbf18",
+              "leftValue": "={{ $json.priority }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "31fb0f2d-6e5a-41b9-9368-8a14653c2f49",
+      "name": "Is High Priority?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "support-team@example.com",
+        "subject": "=[HIGH] {{ $json.ticket_id }} - {{ $json.category }}",
+        "emailType": "html",
+        "message": "=<h3>New high-priority ticket</h3>\n<p><b>Ticket:</b> {{ $json.ticket_id }}<br><b>Customer:</b> {{ $json.name }} ({{ $json.email }})<br><b>Category:</b> {{ $json.category }}<br><b>Issue:</b> {{ $json.description }}</p>\n<p>Open the Tickets sheet to respond.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5d2f84dd-5276-45ce-9e7b-af4c75891cb1",
+      "name": "Alert Support Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ],
+      "webhookId": "3fc294b7-9b18-4814-8f04-f0e8e29e429c"
+    }
+  ],
+  "connections": {
+    "Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is High Priority?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is High Priority?": {
+      "main": [
+        [
+          {
+            "node": "Alert Support Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

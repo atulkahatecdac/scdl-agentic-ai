@@ -1,0 +1,269 @@
+{
+  "name": "M4-WF2 Invoice Data Extraction",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M4-WF2 Invoice Extraction\n**Setup**\n1. Load `m4_schema.sql`.\n2. Pick OpenAI and MySQL credentials.\n3. Execute, open the Test URL and upload `data/invoice_1.pdf`, then `invoice_2.pdf`.",
+        "width": 440,
+        "height": 220,
+        "color": 5
+      },
+      "id": "b48489e8-0bbd-4623-80e1-1b5d6f89a1ea",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload a Supplier Invoice",
+        "formDescription": "Text-based PDF invoices only (not scanned photos).",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Invoice",
+              "requiredField": true,
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf"
+            }
+          ]
+        },
+        "options": {
+          "path": "invoice"
+        }
+      },
+      "id": "815dcd8d-f8b9-47f0-9234-4a7fb910e8d4",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "2cc62f69-5c94-4d8e-a943-e4fa494a1d81"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Invoice",
+        "options": {}
+      },
+      "id": "96f8305e-701a-4417-a20f-5dce8e12c5f7",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "vendor_name",
+              "type": "string",
+              "description": "Name of the company that issued the invoice",
+              "required": true
+            },
+            {
+              "name": "invoice_number",
+              "type": "string",
+              "description": "Invoice number exactly as printed",
+              "required": true
+            },
+            {
+              "name": "invoice_date",
+              "type": "string",
+              "description": "Invoice date in YYYY-MM-DD format",
+              "required": true
+            },
+            {
+              "name": "gstin",
+              "type": "string",
+              "description": "Supplier's 15-character GSTIN",
+              "required": true
+            },
+            {
+              "name": "total_amount",
+              "type": "number",
+              "description": "Final total payable including tax, as a plain number without commas",
+              "required": true
+            },
+            {
+              "name": "currency",
+              "type": "string",
+              "description": "3-letter currency code, e.g. INR",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8c38ed15-8320-4a01-9a43-f0918c6580fb",
+      "name": "Information Extractor",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "ac5ce464-67d1-48b1-a77c-f4132aad7b5a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "invoices",
+          "mode": "name"
+        },
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "vendor_name",
+              "value": "={{ $json.output.vendor_name }}"
+            },
+            {
+              "column": "invoice_number",
+              "value": "={{ $json.output.invoice_number }}"
+            },
+            {
+              "column": "invoice_date",
+              "value": "={{ $json.output.invoice_date }}"
+            },
+            {
+              "column": "gstin",
+              "value": "={{ $json.output.gstin }}"
+            },
+            {
+              "column": "total_amount",
+              "value": "={{ $json.output.total_amount }}"
+            },
+            {
+              "column": "currency",
+              "value": "={{ $json.output.currency }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ee4a5c1d-1b80-40e2-82e3-696b4eb7284b",
+      "name": "Save Invoice",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Invoice saved",
+        "completionMessage": "=Saved invoice {{ $('Information Extractor').item.json.output.invoice_number }} from {{ $('Information Extractor').item.json.output.vendor_name }} for {{ $('Information Extractor').item.json.output.currency }} {{ $('Information Extractor').item.json.output.total_amount }}.",
+        "options": {}
+      },
+      "id": "08cd53da-e6d9-498d-a9d1-4da0910bccd1",
+      "name": "Show Result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1040,
+        0
+      ],
+      "webhookId": "061df3fe-970e-427b-b6d3-fefa521a7e93"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Save Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Invoice": {
+      "main": [
+        [
+          {
+            "node": "Show Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

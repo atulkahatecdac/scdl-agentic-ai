@@ -1,0 +1,219 @@
+{
+  "name": "M3-WF1 Weather Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M3-WF1 Weather Alert\nNo API key needed (Open-Meteo).\n**Setup**: pick your Gmail credential in **Rain Alert** and change the To address (support-team@example.com).\nTip: set the IF threshold to 0 while testing.",
+        "width": 440,
+        "height": 200,
+        "color": 5
+      },
+      "id": "b69c4671-7ff0-4518-b049-8e409b9b0243",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 7,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "41cd995c-e0fe-4506-882b-33b40dc2d939",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "18.52"
+            },
+            {
+              "name": "longitude",
+              "value": "73.86"
+            },
+            {
+              "name": "daily",
+              "value": "precipitation_probability_max,temperature_2m_max"
+            },
+            {
+              "name": "timezone",
+              "value": "Asia/Kolkata"
+            },
+            {
+              "name": "forecast_days",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "25571112-b884-4ff9-8562-2a8b3e2b1f81",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e93c206-f531-4f79-b33c-c13188428868",
+              "name": "rain_chance",
+              "value": "={{ $json.daily.precipitation_probability_max[0] }}",
+              "type": "number"
+            },
+            {
+              "id": "d06462da-22a8-4235-a083-3e5605c7a653",
+              "name": "max_temp",
+              "value": "={{ $json.daily.temperature_2m_max[0] }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "dfeda1b4-17cd-4571-bba9-d2d00b3dbb22",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "924226d7-e8ee-49af-9abc-f355b18cb178",
+              "leftValue": "={{ $json.rain_chance }}",
+              "rightValue": 60,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "868bdcb1-abc6-4072-9384-bb3934025fcb",
+      "name": "Rain Likely?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "support-team@example.com",
+        "subject": "=Rain alert: {{ $json.rain_chance }}% chance today",
+        "emailType": "html",
+        "message": "=<p>Max temperature: {{ $json.max_temp }} °C</p><p>Carry rain covers for equipment and schedule indoor jobs first.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8b97bcd3-0a8f-419d-aec5-a8655f0d64d6",
+      "name": "Rain Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        0
+      ],
+      "webhookId": "6b6cd2dc-4229-4f19-99e6-9c644226a6cd"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Rain Likely?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rain Likely?": {
+      "main": [
+        [
+          {
+            "node": "Rain Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

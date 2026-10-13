@@ -1,0 +1,303 @@
+{
+  "name": "M1-WF2 Status Update",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M1-WF2 Status Update\n**Setup**\n1. Add a **comment** column (column I) to the Tickets tab.\n2. Pick your spreadsheet in **Find Ticket** and **Update Ticket**.\n3. Build the Dashboard tab (see README) for the views part of the lab.",
+        "width": 460,
+        "height": 240,
+        "color": 5
+      },
+      "id": "f444fb36-b8cf-45af-877e-7048783ac798",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Update a Ticket",
+        "formDescription": "For support staff: change the status of a ticket.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Ticket ID",
+              "requiredField": true,
+              "placeholder": "SR-260929101512"
+            },
+            {
+              "fieldLabel": "New Status",
+              "requiredField": true,
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Open"
+                  },
+                  {
+                    "option": "In Progress"
+                  },
+                  {
+                    "option": "Resolved"
+                  },
+                  {
+                    "option": "Closed"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Comment",
+              "requiredField": false,
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "path": "update-ticket"
+        }
+      },
+      "id": "d9091868-98af-4dc3-a581-4cbb20ee7140",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "1ecd1701-307f-4e63-870d-cc5761f0b0fd"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Tickets",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "ticket_id",
+              "lookupValue": "={{ $json['Ticket ID'].trim() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "be4c9bb7-b3c9-49ba-9b76-71723f6474e0",
+      "name": "Find Ticket",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9dfa0b52-e468-4b55-a3e0-1774c5e8d96d",
+              "leftValue": "={{ $json.ticket_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "b0f459f9-fba4-46c5-89f2-3e7f08fc5bda",
+      "name": "Ticket Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Tickets",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket_id": "={{ $json.ticket_id }}",
+            "status": "={{ $('Form Trigger').item.json['New Status'] }}",
+            "comment": "={{ $('Form Trigger').item.json.Comment }}"
+          },
+          "schema": [
+            {
+              "id": "ticket_id",
+              "displayName": "ticket_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comment",
+              "displayName": "comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "matchingColumns": [
+            "ticket_id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "bc531b15-1b25-41a9-9b8d-422823bc47d2",
+      "name": "Update Ticket",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Ticket updated",
+        "completionMessage": "={{ $json.ticket_id }} is now {{ $('Form Trigger').item.json['New Status'] }}.",
+        "options": {}
+      },
+      "id": "9277829b-c5c9-4f4f-883f-ea27bd5ac764",
+      "name": "Updated Page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        960,
+        -100
+      ],
+      "webhookId": "ad8f8361-d13d-4220-a1d8-9e358372ecfb"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Ticket not found",
+        "completionMessage": "=No ticket with ID {{ $('Form Trigger').item.json['Ticket ID'] }}. Check the ID and try again.",
+        "options": {}
+      },
+      "id": "631d9dc0-906c-48ee-a442-305304243982",
+      "name": "Not Found Page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        720,
+        120
+      ],
+      "webhookId": "c173e14a-56f8-4188-aa40-40a61cc9c954"
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Find Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Ticket": {
+      "main": [
+        [
+          {
+            "node": "Ticket Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Found?": {
+      "main": [
+        [
+          {
+            "node": "Update Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Found Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Ticket": {
+      "main": [
+        [
+          {
+            "node": "Updated Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

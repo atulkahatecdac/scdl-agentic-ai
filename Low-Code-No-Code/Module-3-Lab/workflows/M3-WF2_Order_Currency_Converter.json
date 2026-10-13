@@ -1,0 +1,282 @@
+{
+  "name": "M3-WF2 Order Currency Converter",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M3-WF2 Currency Converter\nNo API key needed (Frankfurter).\n**Setup**\n1. Load `m3_schema.sql`.\n2. Pick MySQL and Google Sheets credentials.\n3. Create a tab **INR Report** with headers: order_id, customer, currency, amount, rate, amount_inr.",
+        "width": 460,
+        "height": 250,
+        "color": 5
+      },
+      "id": "806859cc-0de5-4086-bc2d-2c426838d451",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "5af33391-283a-48eb-86b9-9258c6906c36",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT order_id, customer, currency, amount\nFROM orders\nWHERE currency <> 'INR'   -- Frankfurter rejects INR -> INR (422)\nORDER BY order_id",
+        "options": {}
+      },
+      "id": "66787216-a471-47ba-933f-d5892aedf036",
+      "name": "MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.frankfurter.dev/v1/latest",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "base",
+              "value": "={{ $json.currency }}"
+            },
+            {
+              "name": "symbols",
+              "value": "INR"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "a6a97048-cd80-4480-ae94-c9268af2e956",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dd48254c-95cb-4a30-b343-3e6110388312",
+              "name": "order_id",
+              "value": "={{ $('MySQL').item.json.order_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b67bd49e-115f-44a5-9e27-2c3d157ce2f6",
+              "name": "customer",
+              "value": "={{ $('MySQL').item.json.customer }}",
+              "type": "string"
+            },
+            {
+              "id": "1cf77486-e605-42e4-8038-5f83acd15221",
+              "name": "currency",
+              "value": "={{ $('MySQL').item.json.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "f30cc419-26bf-43ef-815c-dc00a8d5bc6d",
+              "name": "amount",
+              "value": "={{ Number($('MySQL').item.json.amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "55e2348e-b5dc-4ca7-a055-955fc30a3308",
+              "name": "rate",
+              "value": "={{ $json.rates.INR }}",
+              "type": "number"
+            },
+            {
+              "id": "5ae809c0-7796-403b-b9d0-f551ca3e5693",
+              "name": "amount_inr",
+              "value": "={{ (Number($('MySQL').item.json.amount) * $json.rates.INR).toFixed(2) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "6e10cac4-f680-42d4-b00f-aba2d122dd84",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "INR Report",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "order_id": "={{ $json.order_id }}",
+            "customer": "={{ $json.customer }}",
+            "currency": "={{ $json.currency }}",
+            "amount": "={{ $json.amount }}",
+            "rate": "={{ $json.rate }}",
+            "amount_inr": "={{ $json.amount_inr }}"
+          },
+          "schema": [
+            {
+              "id": "order_id",
+              "displayName": "order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer",
+              "displayName": "customer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rate",
+              "displayName": "rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amount_inr",
+              "displayName": "amount_inr",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "9212d063-f3b8-4f1b-a88e-8935fac4a78b",
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        960,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

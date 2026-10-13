@@ -1,0 +1,395 @@
+{
+  "name": "M2-WF2 Expense Approval",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M2-WF2 Expense Approval\n**Setup**\n1. Pick MySQL and Gmail credentials in every red node.\n2. Change the manager address in **Ask Manager** (manager@example.com).\n3. Claims above Rs 5,000 pause until the manager clicks Approve/Decline — open the email link on the machine running n8n.",
+        "width": 480,
+        "height": 260,
+        "color": 5
+      },
+      "id": "6805ccd1-507f-4d72-9eaf-19d27ac2a036",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Submit an Expense Claim",
+        "formDescription": "Claims up to Rs 5,000 are approved automatically.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Employee Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "requiredField": true,
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Amount",
+              "requiredField": true,
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Category",
+              "requiredField": true,
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Travel"
+                  },
+                  {
+                    "option": "Meals"
+                  },
+                  {
+                    "option": "Supplies"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Description",
+              "requiredField": true,
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {
+          "path": "expense",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Claim received. You will get an email with the decision."
+            }
+          }
+        }
+      },
+      "id": "1bd73b0a-a8f8-4330-9ce1-4147d3a560b2",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "ec68dc72-c060-4917-bbdc-a2f44ab4c043"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "154a2743-22df-414a-90ac-b11daee61d73",
+              "name": "expense_id",
+              "value": "=EXP-{{ $now.toFormat('yyMMdd') }}-{{ $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "3879ee70-be69-4fb3-bc75-c1276ffd159e",
+              "name": "employee",
+              "value": "={{ $json['Employee Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "61de4acf-cc34-4fae-976f-239e0af65d62",
+              "name": "email",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "8ad45a3d-0b44-4141-89c1-ce4dee618187",
+              "name": "amount",
+              "value": "={{ Number($json.Amount) }}",
+              "type": "number"
+            },
+            {
+              "id": "f627c784-270f-4ee1-9ff4-dab97f4ff8bd",
+              "name": "category",
+              "value": "={{ $json.Category }}",
+              "type": "string"
+            },
+            {
+              "id": "26ae263f-998e-46b8-8303-66cf37fee380",
+              "name": "description",
+              "value": "={{ $json.Description }}",
+              "type": "string"
+            },
+            {
+              "id": "08f6a8a2-2cab-42c6-a78d-b363208c5371",
+              "name": "status",
+              "value": "Pending",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "96119130-ea01-4d06-af59-291aab79b13e",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "expenses",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "8faba312-d83f-44e6-9fb2-6e3d1ea0b9cf",
+      "name": "Save Claim",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c40a094a-46e6-427e-a874-176b58dbff19",
+              "leftValue": "={{ $('Edit Fields').item.json.amount }}",
+              "rightValue": 5000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "cd648a94-c2c7-44c1-9828-111aa90421ae",
+      "name": "Needs Approval?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "manager@example.com",
+        "subject": "=Approve expense {{ $('Edit Fields').item.json.expense_id }}: Rs {{ $('Edit Fields').item.json.amount }}",
+        "message": "=Employee: {{ $('Edit Fields').item.json.employee }}\nAmount: Rs {{ $('Edit Fields').item.json.amount }}\nCategory: {{ $('Edit Fields').item.json.category }}\nDescription: {{ $('Edit Fields').item.json.description }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "id": "d2c8ceb8-d5e3-481e-a5ec-54603dcd8238",
+      "name": "Ask Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        -120
+      ],
+      "webhookId": "2fc49897-d1bf-4d5c-acd3-2e308ecad32f"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": {
+          "__rl": true,
+          "value": "expenses",
+          "mode": "name"
+        },
+        "dataMode": "defineBelow",
+        "columnToMatchOn": "expense_id",
+        "valueToMatchOn": "={{ $('Edit Fields').item.json.expense_id }}",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "status",
+              "value": "={{ $json.data.approved ? 'Approved' : 'Rejected' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e4cebb07-7a1c-4339-86a6-f6b7382110e5",
+      "name": "Record Decision",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1200,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "table": {
+          "__rl": true,
+          "value": "expenses",
+          "mode": "name"
+        },
+        "dataMode": "defineBelow",
+        "columnToMatchOn": "expense_id",
+        "valueToMatchOn": "={{ $('Edit Fields').item.json.expense_id }}",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "status",
+              "value": "Approved"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dad5f2e9-d8f2-4af5-bad5-9eeea5ae19dd",
+      "name": "Auto Approve",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        960,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "=Expense {{ $('Edit Fields').item.json.expense_id }}: {{ $('Ask Manager').isExecuted ? ($('Ask Manager').item.json.data.approved ? 'Approved' : 'Rejected') : 'Approved' }}",
+        "emailType": "html",
+        "message": "=<p>Hi {{ $('Edit Fields').item.json.employee }},</p><p>Your claim of Rs {{ $('Edit Fields').item.json.amount }} ({{ $('Edit Fields').item.json.category }}) is <b>{{ $('Ask Manager').isExecuted ? ($('Ask Manager').item.json.data.approved ? 'Approved' : 'Rejected') : 'Approved' }}</b>.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "99b8a3a2-cbce-40bf-a89a-748cb6fa86c3",
+      "name": "Notify Employee",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        0
+      ],
+      "webhookId": "6c6a0c54-725f-4955-ba87-68d0c46ad40f"
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Save Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Claim": {
+      "main": [
+        [
+          {
+            "node": "Needs Approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Approval?": {
+      "main": [
+        [
+          {
+            "node": "Ask Manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auto Approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Manager": {
+      "main": [
+        [
+          {
+            "node": "Record Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Decision": {
+      "main": [
+        [
+          {
+            "node": "Notify Employee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Approve": {
+      "main": [
+        [
+          {
+            "node": "Notify Employee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

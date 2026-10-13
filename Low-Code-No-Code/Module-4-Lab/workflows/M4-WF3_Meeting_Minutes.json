@@ -1,0 +1,257 @@
+{
+  "name": "M4-WF3 Meeting Notes to Minutes",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M4-WF3 Meeting Minutes\n**Setup**\n1. Paste `data/meeting_notes.txt` into a new Google Doc; copy its URL.\n2. Pick credentials: Google Docs (OAuth2), OpenAI, Gmail.\n3. Execute, open the Test URL and submit the doc URL. Review the Gmail **draft** before sending.",
+        "width": 460,
+        "height": 240,
+        "color": 5
+      },
+      "id": "fbaca89a-37b5-4245-aca6-5af57ccd9075",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Turn Meeting Notes into Minutes",
+        "formDescription": "Paste the link to a Google Doc with raw notes.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Notes doc URL",
+              "requiredField": true,
+              "placeholder": "https://docs.google.com/document/d/..."
+            },
+            {
+              "fieldLabel": "Meeting title",
+              "requiredField": true,
+              "placeholder": "Pune store launch - weekly sync"
+            },
+            {
+              "fieldLabel": "Attendee emails",
+              "requiredField": true,
+              "placeholder": "priya@example.com, sameer@example.com"
+            }
+          ]
+        },
+        "options": {
+          "path": "minutes",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Done! Your minutes doc and a Gmail draft are ready."
+            }
+          }
+        }
+      },
+      "id": "82f5502c-c569-47de-9707-11370a3d3fda",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "d01553f5-ec90-49f8-a8cc-c75ca79478d1"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "get",
+        "documentURL": "={{ $json['Notes doc URL'] }}"
+      },
+      "id": "60181ea5-7dc9-4eb1-b7a5-94cef3b20b47",
+      "name": "Get Notes",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Raw meeting notes:\n\n{{ $json.content }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You write concise, professional meeting minutes. Use exactly three headings in capitals: SUMMARY (2-3 sentences), DECISIONS (bullet list), ACTION ITEMS (bullet list, each as 'Owner: task (due date)'). Use only facts that appear in the notes. If an owner or date is missing, write 'TBD'. Plain text, no markdown symbols other than '-' bullets."
+            }
+          ]
+        }
+      },
+      "id": "61d3e9d8-5c27-45f8-951f-4ad06cda60a0",
+      "name": "Write Minutes",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "fe37faf5-dd9a-4578-8ba5-28b6373efb51",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "driveId": "myDrive",
+        "folderId": "default",
+        "title": "=Minutes: {{ $('Form Trigger').item.json['Meeting title'] }}"
+      },
+      "id": "4f3cc3b7-a35c-4d97-a93b-35426a0c1f32",
+      "name": "Create Minutes Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "object": "text",
+              "action": "insert",
+              "text": "={{ $('Write Minutes').item.json.text }}"
+            }
+          ]
+        }
+      },
+      "id": "5bf44588-eb49-4b60-a8ce-5b28d9aba331",
+      "name": "Insert Minutes",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Minutes: {{ $('Form Trigger').item.json['Meeting title'] }}",
+        "emailType": "text",
+        "message": "=Hi all,\n\nPlease find the minutes below. Full document: https://docs.google.com/document/d/{{ $('Create Minutes Doc').item.json.id }}/edit\n\n{{ $('Write Minutes').item.json.text }}\n\nRegards",
+        "options": {
+          "sendTo": "={{ $('Form Trigger').item.json['Attendee emails'] }}"
+        }
+      },
+      "id": "0a792bfe-aa2c-4174-bb89-1c9c7b0b559b",
+      "name": "Draft Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1280,
+        0
+      ],
+      "webhookId": "37f7be81-eb9b-497c-a122-394553f013e8"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Minutes",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Notes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Notes": {
+      "main": [
+        [
+          {
+            "node": "Write Minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Minutes": {
+      "main": [
+        [
+          {
+            "node": "Create Minutes Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Minutes Doc": {
+      "main": [
+        [
+          {
+            "node": "Insert Minutes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Minutes": {
+      "main": [
+        [
+          {
+            "node": "Draft Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

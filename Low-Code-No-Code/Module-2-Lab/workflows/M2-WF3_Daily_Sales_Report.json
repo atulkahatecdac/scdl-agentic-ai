@@ -1,0 +1,197 @@
+{
+  "name": "M2-WF3 Daily Sales Report",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M2-WF3 Daily Sales Report\n**Setup**\n1. Pick credentials: MySQL, Google Docs (OAuth2), Gmail.\n2. Change the manager address in **Email Manager** (manager@example.com).\n3. Click **Execute workflow** to test now; activate for 9:00 every day.",
+        "width": 460,
+        "height": 230,
+        "color": 5
+      },
+      "id": "43dcb612-792c-4b24-805e-dee12fc87d7a",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "dba090d6-ff8a-40bf-b9b3-75f903458345",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT region, COUNT(*) AS orders, SUM(amount) AS revenue\nFROM sales\nWHERE sale_date = CURDATE() - INTERVAL 1 DAY\nGROUP BY region\nORDER BY revenue DESC",
+        "options": {}
+      },
+      "id": "ff71280b-13c5-4da3-8e06-441ccbb83f7b",
+      "name": "MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "rows",
+        "options": {}
+      },
+      "id": "d67c42aa-d892-47e0-ba4b-1011abdce14e",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "driveId": "myDrive",
+        "folderId": "default",
+        "title": "=Sales report {{ $today.minus({days: 1}).toFormat('dd MMM yyyy') }}"
+      },
+      "id": "d1cc07fd-769f-4852-b186-594b97bdc4d8",
+      "name": "Create",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "object": "text",
+              "action": "insert",
+              "text": "=Sales report for {{ $today.minus({days: 1}).toFormat('dd MMM yyyy') }}\n\n{{ $('Aggregate').item.json.rows.map(r => r.region + ': ' + r.orders + ' orders, Rs ' + r.revenue).join('\\n') }}\n"
+            }
+          ]
+        }
+      },
+      "id": "a266c0cc-4df5-462a-91d8-eb07049bac2c",
+      "name": "Insert Report Text",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "manager@example.com",
+        "subject": "=Sales report {{ $today.minus({days: 1}).toFormat('dd MMM yyyy') }}",
+        "emailType": "html",
+        "message": "=<p>Yesterday's sales report is ready:</p><p><a href=\"https://docs.google.com/document/d/{{ $('Create').item.json.id }}/edit\">Open the report</a></p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4e9b94be-e652-4909-82df-8576b25b1292",
+      "name": "Email Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1200,
+        0
+      ],
+      "webhookId": "2f56bba6-4a81-4645-b96a-061400a1548b"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create": {
+      "main": [
+        [
+          {
+            "node": "Insert Report Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Report Text": {
+      "main": [
+        [
+          {
+            "node": "Email Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

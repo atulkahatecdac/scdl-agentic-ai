@@ -57,7 +57,7 @@ VS Code needs to know which Python (and later, which virtual environment) to use
 Open a PowerShell terminal and navigate into the `Module-1-Lab` folder, for example:
 
 ```powershell
-cd "C:\lectures\Others\SCDL\Aug-2026\Module-1-Lab"
+cd "C:\lectures\Others\SCDL\Aug-2026\Agentic-AI\Module-1-Lab"
 ```
 
 ## 7. Create and activate a virtual environment

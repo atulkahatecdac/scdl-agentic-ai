@@ -1,0 +1,262 @@
+{
+  "name": "M5-WF2 Daily Management Report",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## M5-WF2 Daily Management Report\n**Setup**\n1. Pick credentials: MySQL, OpenAI, Google Docs (OAuth2), Gmail.\n2. Change the manager address (manager@example.com).\n3. Submit a few tickets via WF1, then **Execute workflow**.\n4. Settings → Error workflow → M5-WF3.",
+        "width": 460,
+        "height": 250,
+        "color": 5
+      },
+      "id": "7e4fb0e9-aa3f-4a38-899a-bc24bf6d7d06",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 18,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "875cf6d5-7599-4901-affb-2696f77e646c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(category, 'Uncategorised') AS category,\n       COALESCE(priority, '-') AS priority,\n       COUNT(*) AS n\nFROM tickets\nWHERE DATE(created_at) = CURDATE()\nGROUP BY 1, 2\nORDER BY 1, 2",
+        "options": {}
+      },
+      "id": "68968c49-5d58-41e8-bd06-e14c721a31ae",
+      "name": "MySQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "stats",
+        "options": {}
+      },
+      "id": "7eec68ae-f5e9-455d-a17a-f1055ee2ff4f",
+      "name": "Aggregate",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ticket counts for today as JSON (category, priority, n):\n{{ JSON.stringify($json.stats.filter(s => s.n)) }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You write a short daily report for a support manager. Write at most 5 lines of plain text. Use ONLY the numbers given; do not invent numbers or causes. Give the total, the split by category, and point out every High priority count. If there are no tickets, say so in one line."
+            }
+          ]
+        }
+      },
+      "id": "b535f210-2ce4-4ebd-801d-75d40833e825",
+      "name": "Write Summary",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "136dce87-2e44-4091-84a9-cf7518220b31",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "driveId": "myDrive",
+        "folderId": "default",
+        "title": "=Support report {{ $today.toFormat('dd MMM yyyy') }}"
+      },
+      "id": "8691d742-054b-4db4-952a-b5e99129e576",
+      "name": "Create",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "object": "text",
+              "action": "insert",
+              "text": "=Support report - {{ $today.toFormat('dd MMM yyyy') }}\n\n{{ $('Write Summary').item.json.text }}\n\nRaw counts:\n{{ $('Aggregate').item.json.stats.filter(s => s.n).map(s => s.category + ' / ' + s.priority + ': ' + s.n).join('\\n') || 'No tickets today' }}\n"
+            }
+          ]
+        }
+      },
+      "id": "1c2576d4-917b-4fc7-b72b-4fe027e772d7",
+      "name": "Insert Summary",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "manager@example.com",
+        "subject": "=Support report {{ $today.toFormat('dd MMM yyyy') }}",
+        "emailType": "html",
+        "message": "=<p>{{ $('Write Summary').item.json.text.replace(/\\n/g, '<br>') }}</p><p><a href=\"https://docs.google.com/document/d/{{ $('Create').item.json.id }}/edit\">Open the full report</a></p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d371f858-f248-4ddd-b0d9-59e1fba5de4d",
+      "name": "Email Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1520,
+        0
+      ],
+      "webhookId": "c28a203e-af20-40cd-af98-d56ad4f9a4cb"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Write Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Summary": {
+      "main": [
+        [
+          {
+            "node": "Create",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create": {
+      "main": [
+        [
+          {
+            "node": "Insert Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Summary": {
+      "main": [
+        [
+          {
+            "node": "Email Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
