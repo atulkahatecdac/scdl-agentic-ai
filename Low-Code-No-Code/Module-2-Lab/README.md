@@ -10,12 +10,12 @@
 ## 1. Start MySQL in its own container (first time only)
 
 ```powershell
-docker volume create scdl_mysql_data
+docker volume create scdl_my_sql_data
 docker run -d --name mysql -p 3306:3306 `
   -e MYSQL_ROOT_PASSWORD=root123 `
   -e MYSQL_DATABASE=bizdb `
   -e MYSQL_USER=n8n -e MYSQL_PASSWORD=n8npass `
-  -v mysql_data:/var/lib/mysql mysql:8.4
+  -v scdl_my_sql_data:/var/lib/mysql mysql:8.4
 ```
 
 Wait about 20 seconds on the first start, then load the tables:
