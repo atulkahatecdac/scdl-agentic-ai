@@ -10,7 +10,7 @@
 ## 1. Start MySQL in its own container (first time only)
 
 ```powershell
-docker volume create mysql_data
+docker volume create scdl_mysql_data
 docker run -d --name mysql -p 3306:3306 `
   -e MYSQL_ROOT_PASSWORD=root123 `
   -e MYSQL_DATABASE=bizdb `
