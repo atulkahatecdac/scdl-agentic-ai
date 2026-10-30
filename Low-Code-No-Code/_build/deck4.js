@@ -125,9 +125,9 @@ module.exports = async function build(out) {
       "Set a monthly usage limit",
       "n8n: **Credentials → OpenAI**, paste the key → **Test**",
       "Gmail: create labels `AI/Sales`, `AI/Support`, `AI/Billing`, `AI/Spam`",
-      "Load `m4_schema.sql` (adds the `invoices` table)",
+      "Start the `mysql` container, then load `m4_schema.sql` (command at right)",
     ],
-    panel: { caption: "Quick test in n8n", fontSize: 10, lines: [
+    panel: { caption: "Quick test in n8n / Load the table", fontSize: 9, lines: [
       "# Manual Trigger → Basic LLM Chain",
       "#   + OpenAI Chat Model (gpt-4o-mini)",
       "",
@@ -139,7 +139,12 @@ module.exports = async function build(out) {
       "",
       "Output:",
       "  { \"text\": \"Billing\" }",
+      "",
+      "# invoices table for WF2 (PowerShell, in Module-4-Lab)",
+      "Get-Content m4_schema.sql |",
+      "  docker exec -i mysql mysql -un8n -pn8npass bizdb",
     ] },
+    notes: "Run the schema command from the Module-4-Lab folder. It prints nothing on success. It drops and recreates invoices, so running it again clears any invoices already saved.",
   });
 
   // ---------- WF1 ----------
