@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "demo1_unit/starter",
+    "demo2_mock/starter",
+    "demo3_integration/starter"
+  ]
+}

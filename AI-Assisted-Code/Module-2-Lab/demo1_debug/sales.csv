@@ -1,0 +1,9 @@
+order_id,region,product,quantity,unit_price
+1001,West,A5 notebook,40,45.00
+1002,West,Gel pen,120,12.50
+1003,North,Stapler,10,180.00
+1004,South,A5 notebook,200,45.00
+1005,North,Gel pen,15,12.50
+1006,South,Desk lamp,4,1250.00
+1007,West,Stapler,25,180.00
+1008,North,Desk lamp,8,1250.00

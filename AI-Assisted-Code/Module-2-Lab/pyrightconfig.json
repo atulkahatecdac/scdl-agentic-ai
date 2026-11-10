@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "demo1_debug/starter",
+    "demo2_refactor/starter",
+    "demo3_optimize/starter"
+  ]
+}

@@ -1,0 +1,10 @@
+task_id,title,owner,status,note
+T1,Loan data model,Asha,Done,
+T2,Borrow: availability and due date,Asha,Done,
+T3,Borrow: 3-book limit,Rohan,Done,
+T4,Return with late fine and cap,Rohan,In progress,cap rule merged; tests pending
+T5,Block borrowing while fines unpaid,Neha,In progress,
+T6,Acceptance tests AC-1 to AC-6,Neha,To do,
+T7,Portal screens,Vikram,Blocked,waiting for portal team API keys
+T8,README and how-to page,Asha,To do,
+T9,Deploy to staging,Vikram,Blocked,staging server not provisioned

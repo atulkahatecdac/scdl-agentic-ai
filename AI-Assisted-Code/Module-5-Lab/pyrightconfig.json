@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "demo1_review/starter",
+    "demo2_secrets/starter",
+    "demo3_authz/starter"
+  ]
+}

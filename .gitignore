@@ -5,3 +5,5 @@ __pycache__/
 chroma_db/
 user_memory.json
 node_modules/
+.coverage
+.pytest_cache/

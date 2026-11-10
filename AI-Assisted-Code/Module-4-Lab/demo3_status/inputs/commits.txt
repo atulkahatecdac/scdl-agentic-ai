@@ -1,0 +1,7 @@
+a41c9e2 (Asha)   T1 add Loan, Copy and Fee models
+7be0d13 (Asha)   T2 borrow(): availability check and 14-day due date
+c3f8a21 (Rohan)  T3 enforce max 3 books per student
+91d2e4f (Rohan)  T4 return_book(): late fee per day
+e07b6aa (Rohan)  T4 cap late fee at Rs 100 per book
+5d1c0b8 (Neha)   T5 WIP: block borrow when fees > 0
+f2a9934 (Asha)   fix typo in error message

@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "demo1_bonus/starter",
+    "demo2_product/starter",
+    "demo3_orders/starter"
+  ]
+}

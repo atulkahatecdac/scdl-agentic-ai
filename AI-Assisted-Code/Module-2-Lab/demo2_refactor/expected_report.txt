@@ -1,0 +1,6 @@
+E01  Asha Kulkarni    FT  gross  85,000.00  tax 12,000.00  net  71,200.00
+E02  Rohan Mehta      CT  gross  60,000.00  tax  7,000.00  net  53,000.00
+E03  Neha Joshi       FT  gross  42,000.00  tax  4,200.00  net  36,000.00
+E05  Priya Nair       FT  gross 120,000.00  tax 19,000.00  net  99,200.00
+TOTAL NET 259,400.00
+SKIPPED E04, E06

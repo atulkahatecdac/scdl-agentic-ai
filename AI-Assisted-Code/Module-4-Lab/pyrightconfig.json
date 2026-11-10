@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "demo1_docs/starter",
+    "demo2_stories/starter",
+    "demo3_status/starter"
+  ]
+}
