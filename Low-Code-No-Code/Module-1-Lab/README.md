@@ -11,10 +11,10 @@ Three workflows that together make a small **Service Request Desk** app:
 ## 1. Start n8n (first time only)
 
 ```powershell
-docker volume create n8n_data
+docker volume create scdl_n8n_data
 docker run -d --name n8n -p 5678:5678 `
   -e GENERIC_TIMEZONE=Asia/Kolkata -e TZ=Asia/Kolkata `
-  -v n8n_data:/home/node/.n8n `
+  -v scdl_n8n_data:/home/node/.n8n `
   docker.n8n.io/n8nio/n8n
 ```
 
